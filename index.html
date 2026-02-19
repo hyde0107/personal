@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>えもじの子 | いつものトークに、ちいさな体温を。</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&family=M+PLUS+Rounded+1c:wght@400;500;800;900&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollToPlugin.min.js"></script>
+    
+    <style>
+        /* =========================================
+           Base & Variables
+        ========================================= */
+        :root {
+            --c-primary: #FDE047;     
+            --c-primary-dark: #EAB308;
+            --c-accent: #38BDF8;      
+            --c-navy: #0F172A;        
+            --c-gray-100: #F1F5F9;
+            --c-gray-50: #F8FAFC;
+            --c-white: #FFFFFF;
+            
+            --font-en: 'Outfit', sans-serif;
+            --font-ja: 'M PLUS Rounded 1c', sans-serif;
+            
+            --ease-elastic: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; cursor: none; }
+        
+        body {
+            font-family: var(--font-ja);
+            background-color: var(--c-gray-50);
+            color: var(--c-navy);
+            overflow-x: hidden;
+            line-height: 1.8;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        a { text-decoration: none; color: inherit; }
+        a, button, .btn, .product-card, #top-back { cursor: none; }
+        img { max-width: 100%; height: auto; display: block; }
+
+        /* =========================================
+           Custom Cursor
+        ========================================= */
+        .cursor-dot,
+        .cursor-outline {
+            position: fixed; top: 0; left: 0;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            z-index: 9999;
+            pointer-events: none;
+            transition: background-color 0.2s, border-color 0.2s, width 0.2s, height 0.2s;
+        }
+        
+        .cursor-dot {
+            width: 8px; height: 8px; 
+            background-color: var(--c-navy);
+        }
+        
+        .cursor-outline {
+            width: 40px; height: 40px;
+            border: 1px solid rgba(15, 23, 42, 0.5);
+        }
+
+        /* 暗い背景（ラインナップ）に来た時のスタイル */
+        body.on-dark .cursor-dot {
+            background-color: var(--c-primary);
+        }
+        body.on-dark .cursor-outline {
+            border-color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* ホバー時のスタイル */
+        body.hovering .cursor-outline {
+            width: 60px; height: 60px;
+            background-color: rgba(253, 224, 71, 0.2);
+            border-color: var(--c-primary-dark);
+        }
+        body.on-dark.hovering .cursor-outline {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-color: #fff;
+        }
+
+        /* =========================================
+           Scroll Progress Bar
+        ========================================= */
+        .progress-bar {
+            position: fixed; top: 0; left: 0; width: 0%; height: 4px;
+            background: var(--c-primary-dark); z-index: 1000;
+        }
+
+        /* =========================================
+           Loading Screen
+        ========================================= */
+        #loading {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--c-white); z-index: 9990;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .loading-logo {
+            font-family: var(--font-en); font-weight: 900; font-size: 2rem;
+            margin-bottom: 1rem; opacity: 0; transform: translateY(20px);
+        }
+        .loading-bar-bg {
+            width: 200px; height: 4px; background: var(--c-gray-100);
+            border-radius: 2px; overflow: hidden; opacity: 0;
+        }
+        .loading-bar {
+            width: 0%; height: 100%; background: var(--c-primary-dark);
+        }
+
+        /* =========================================
+           Particles
+        ========================================= */
+        .particles {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0; overflow: hidden;
+        }
+        .particle {
+            position: absolute; border-radius: 50%;
+            background: rgba(253, 224, 71, 0.5);
+            animation: float linear infinite;
+        }
+        @keyframes float {
+            0% { transform: translateY(0) translateX(0); opacity: 0; }
+            50% { opacity: 0.8; }
+            100% { transform: translateY(-100vh) translateX(50px); opacity: 0; }
+        }
+
+        /* =========================================
+           Utility
+        ========================================= */
+        .container {
+            max-width: 1200px; margin: 0 auto; padding: 0 5%; position: relative; z-index: 2;
+        }
+        
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            padding: 1.25rem 3.5rem;
+            background: var(--c-navy); 
+            color: #FFFFFF !important;
+            font-weight: 800; font-size: 1.1rem;
+            border-radius: 100px;
+            transition: all 0.4s var(--ease-out);
+            position: relative; overflow: hidden;
+            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.2);
+            visibility: hidden;
+            text-decoration: none;
+        }
+        .btn::after {
+            content: ''; position: absolute; top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: 0.5s;
+        }
+        .btn:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 15px 35px rgba(15, 23, 42, 0.3);
+            background: #1E293B;
+            color: #FFFFFF !important;
+        }
+        .btn:hover::after { left: 100%; }
+
+        /* =========================================
+           Header
+        ========================================= */
+        header {
+            position: fixed; top: 0; left: 0; width: 100%;
+            padding: 1.5rem 5%; z-index: 100;
+            display: flex; justify-content: space-between; align-items: center;
+            transition: 0.4s var(--ease-out); opacity: 0;
+        }
+        header.scrolled {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            padding: 1rem 5%;
+            box-shadow: 0 4px 30px rgba(0,0,0,0.03);
+        }
+        .logo { 
+            font-family: var(--font-en); font-weight: 900; font-size: 1.5rem; 
+            color: var(--c-navy); letter-spacing: -0.02em;
+        }
+        .hdr-nav { display: flex; align-items: center; gap: 1.5rem; }
+        .hdr-link {
+            font-weight: 800; font-size: 0.95rem; color: var(--c-navy); opacity: 0.6;
+            transition: 0.3s; position: relative;
+        }
+        .hdr-link:hover { opacity: 1; }
+        .hdr-link::after {
+            content: ''; position: absolute; bottom: -4px; left: 0; width: 0%; height: 2px;
+            background: var(--c-primary-dark); transition: 0.3s;
+        }
+        .hdr-link:hover::after { width: 100%; }
+
+        .hdr-btn {
+            background: var(--c-primary); color: var(--c-navy); font-weight: 800;
+            padding: 0.7rem 1.8rem; border-radius: 50px; font-size: 0.9rem;
+            transition: transform 0.3s var(--ease-elastic);
+            box-shadow: 0 4px 15px rgba(253, 224, 71, 0.4);
+        }
+        .hdr-btn:hover { transform: scale(1.05) rotate(2deg); }
+
+        /* =========================================
+           Hero (Main Visual)
+        ========================================= */
+        .hero {
+            /* 修正: 縦が詰まらないよう min-height を調整 */
+            height: 100vh; 
+            min-height: 600px; /* 700pxから緩和 */
+            display: flex; align-items: center; justify-content: center;
+            background: radial-gradient(circle at 50% 40%, #FFFEF0 0%, #FFFDE7 40%, #FEF08A 100%);
+            position: relative; overflow: hidden;
+            padding: 6rem 0; /* 上下に余白を確保して見切れ防止 */
+        }
+        .hero-content {
+            text-align: center; z-index: 5; position: relative;
+            transform-style: preserve-3d;
+            width: 100%;
+        }
+        
+        .hero-catch {
+            font-size: clamp(1.2rem, 3vw, 2.2rem); 
+            font-weight: 800;
+            line-height: 1.5; margin-bottom: 1.5rem; opacity: 0;
+        }
+        
+        .hero-title-wrap {
+            font-family: var(--font-en);
+            font-size: clamp(4rem, 15vw, 13rem);
+            font-weight: 900; line-height: 0.9;
+            letter-spacing: -0.03em; color: var(--c-navy);
+            margin-bottom: 3.5rem; 
+            padding-top: 0.5rem;
+            text-shadow: 0 20px 40px rgba(253, 224, 71, 0.4);
+            display: inline-block;
+        }
+        .char { 
+            display: inline-block; 
+            transform-origin: bottom center;
+            opacity: 0;
+        }
+        .hero-title-wrap:hover .char { color: #1E293B; transition: 0.3s; }
+        .char:hover {
+            transform: scale(1.1) translateY(-10px) rotate(5deg) !important;
+            color: var(--c-primary-dark);
+        }
+
+        .hero-desc {
+            font-size: 1.1rem; font-weight: 700; opacity: 0; 
+            margin-bottom: 3.5rem;
+            color: #475569;
+        }
+
+        /* ★★★ 重要修正: 縦幅が狭い時のレスポンシブ対応 ★★★ 
+           画面の高さが 800px 以下の場合、全体をキュッと縮める
+        */
+        @media (max-height: 800px) {
+            .hero-catch { font-size: 1rem; margin-bottom: 0.5rem; }
+            .hero-title-wrap { 
+                font-size: clamp(3.5rem, 12vh, 8rem); /* 縦幅基準でフォントサイズ可変 */
+                margin-bottom: 1.5rem; 
+            }
+            .hero-desc { margin-bottom: 2rem; font-size: 0.95rem; }
+            .btn { padding: 1rem 2.5rem; font-size: 1rem; }
+            .circle { opacity: 0.6; } /* 圧迫感軽減 */
+        }
+
+        .circle {
+            position: absolute; border-radius: 50%;
+            background: rgba(255,255,255,0.6); filter: blur(60px);
+            z-index: 1; pointer-events: none;
+        }
+        .circle-1 { width: 45vw; height: 45vw; top: -15%; left: -10%; background: rgba(255, 255, 255, 0.5); }
+        .circle-2 { width: 35vw; height: 35vw; bottom: 5%; right: -5%; background: rgba(56, 189, 248, 0.15); }
+
+        /* =========================================
+           Sections
+        ========================================= */
+        .sec-title { text-align: center; margin-bottom: 5rem; }
+        .sec-title .en {
+            font-family: var(--font-en); font-size: 4rem; font-weight: 900;
+            color: transparent; -webkit-text-stroke: 2px rgba(15, 23, 42, 0.1);
+            line-height: 0.8; display: block;
+        }
+        .sec-title .ja {
+            font-size: 1.5rem; font-weight: 800; color: var(--c-navy);
+            margin-top: -1.5rem; display: block; position: relative;
+        }
+
+        .problem { padding: 10rem 0; background: var(--c-white); text-align: center; position: relative; }
+        .problem-text {
+            font-size: clamp(1.2rem, 2.5vw, 1.8rem); font-weight: 700;
+            line-height: 2.2; margin-bottom: 3rem;
+        }
+        .marker {
+            background: linear-gradient(transparent 60%, var(--c-primary) 60%);
+            display: inline; padding: 0 0.2em;
+        }
+
+        /* =========================================
+           Usecase (Chat UI)
+        ========================================= */
+        .usecase { padding: 8rem 0; background: var(--c-gray-50); position: relative; }
+        .chat-wrap {
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 5rem;
+            align-items: center;
+        }
+        
+        .phone-mockup {
+            width: 340px; height: 680px; background: #8DA8C6;
+            border-radius: 50px; border: 10px solid var(--c-navy);
+            box-shadow: 0 30px 60px rgba(15, 23, 42, 0.15);
+            position: relative; overflow: hidden; display: flex; flex-direction: column;
+            
+            transform: rotate(-3deg);
+            transform-origin: center center;
+            transition: transform 0.5s var(--ease-out);
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            will-change: transform;
+            opacity: 0;
+        }
+        .phone-mockup:hover { transform: rotate(0deg) scale(1.02); }
+        
+        .phone-notch {
+            position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+            width: 140px; height: 28px; background: var(--c-navy);
+            border-bottom-left-radius: 18px; border-bottom-right-radius: 18px; z-index: 10;
+        }
+        .status-bar {
+            height: 44px; padding: 0 24px; display: flex; justify-content: space-between; align-items: center;
+            font-size: 12px; font-weight: 800; color: #fff; margin-top: 5px;
+        }
+        .chat-screen {
+            flex: 1; padding: 1rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1.2rem;
+            scrollbar-width: none;
+        }
+        .chat-screen::-webkit-scrollbar { display: none; }
+
+        .chat-input {
+            background: #fff; padding: 12px 16px; border-top: 1px solid #ddd;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .input-box {
+            flex: 1; height: 36px; background: #F3F4F6; border-radius: 18px;
+            padding-left: 15px; display: flex; align-items: center; font-size: 12px; color: #9CA3AF;
+        }
+        .send-icon { width: 28px; height: 28px; background: var(--c-primary); border-radius: 50%; }
+
+        .bubble-row { display: flex; flex-direction: column; max-width: 85%; }
+        .bubble-row.them { align-self: flex-start; }
+        .bubble-row.me { align-self: flex-end; align-items: flex-end; }
+        
+        .bubble {
+            padding: 0.8rem 1.1rem; border-radius: 22px; font-size: 0.95rem; font-weight: 500;
+            line-height: 1.5; position: relative;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            opacity: 0;
+        }
+        .bubble-row.them .bubble { background: #fff; border-top-left-radius: 4px; color: #1E293B; }
+        .bubble-row.me .bubble { background: #89E65D; border-top-right-radius: 4px; color: #0F172A; }
+        
+        .bubble img.inline-emoji {
+            width: 26px; height: auto; vertical-align: text-bottom; margin: 0 2px;
+            display: inline-block;
+        }
+
+        .label-wrap { display: flex; align-items: center; margin-bottom: 4px; gap: 6px; }
+        .label-badge {
+            font-size: 0.65rem; font-weight: 800; padding: 2px 8px; border-radius: 10px;
+            color: #fff; background: #94A3B8;
+        }
+        .label-badge.highlight { background: var(--c-primary-dark); }
+        
+        .chat-desc { flex: 1; min-width: 300px; }
+        .chat-desc h3 { font-size: 2rem; font-weight: 900; margin-bottom: 1.5rem; line-height: 1.4; }
+        .chat-desc p { opacity: 0.8; margin-bottom: 2rem; }
+
+        /* =========================================
+           Lineup Grid (Dark Section)
+        ========================================= */
+        .lineup { 
+            padding: 8rem 0; background: var(--c-navy); color: var(--c-white); position: relative;
+        }
+        .product-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 2rem;
+        }
+        
+        .product-card {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 30px; padding: 2.5rem 1.5rem; text-align: center;
+            transition: 0.4s var(--ease-elastic);
+            display: flex; flex-direction: column; align-items: center;
+            position: relative; overflow: hidden;
+            color: var(--c-white) !important; 
+            text-decoration: none !important;
+            opacity: 0;
+        }
+        .product-card:visited, .product-card:active {
+            color: var(--c-white) !important;
+        }
+
+        .product-card:hover {
+            transform: translateY(-10px); background: rgba(255,255,255,0.1);
+            border-color: var(--c-primary);
+        }
+        .product-card::before {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            transform: scale(0); transition: 0.6s; pointer-events: none;
+        }
+        .product-card:hover::before { transform: scale(1); }
+
+        .p-img {
+            width: 120px; height: 120px; background: #fff; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem;
+            transition: 0.5s var(--ease-elastic);
+        }
+        .product-card:hover .p-img { transform: scale(1.1) rotate(10deg); }
+        .p-img img { width: 80%; }
+
+        .p-title { 
+            font-size: 1.1rem; font-weight: 800; margin-bottom: 0.5rem; 
+            color: var(--c-primary) !important; 
+        }
+        .p-desc { 
+            font-size: 0.85rem; opacity: 0.7; margin-bottom: 1.5rem; flex-grow: 1; 
+            color: rgba(255,255,255,0.9) !important;
+        }
+        
+        .p-link-btn {
+            font-size: 0.85rem; font-weight: 800; padding: 0.8rem 1.5rem;
+            background: rgba(255,255,255,0.1); 
+            border-radius: 50px;
+            transition: 0.3s;
+            color: var(--c-white) !important;
+            display: inline-block;
+        }
+        .product-card:hover .p-link-btn { 
+            background: var(--c-primary); color: var(--c-navy) !important; 
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(253, 224, 71, 0.3);
+        }
+
+        /* =========================================
+           CTA
+        ========================================= */
+        .cta {
+            padding: 10rem 0; text-align: center; position: relative;
+            background: linear-gradient(135deg, #FDE047 0%, #FBBF24 100%);
+        }
+        .cta-content { position: relative; z-index: 2; }
+        .cta h2 { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 900; margin-bottom: 1rem; color: var(--c-navy); }
+        .cta p { font-size: 1.2rem; font-weight: 700; opacity: 0.8; margin-bottom: 3rem; }
+
+        /* =========================================
+           Top Back Character
+        ========================================= */
+        #top-back {
+            position: fixed; bottom: 40px; right: 40px; z-index: 90;
+            width: 80px; height: 80px; 
+            transform: translateY(200px); opacity: 0; 
+            transition: transform 0.6s var(--ease-elastic), opacity 0.4s;
+            animation: floating 3s ease-in-out infinite;
+        }
+        #top-back.show { transform: translateY(0); opacity: 1; }
+        
+        #top-back img {
+            width: 100%; height: 100%; object-fit: contain;
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.15));
+            transition: transform 0.2s;
+        }
+        #top-back:hover img { transform: translateY(-5px) scale(1.1); }
+        
+        @keyframes floating {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        footer {
+            background: #FBBF24;
+            color: var(--c-navy); padding: 2rem 0;
+            text-align: center; font-size: 0.9rem; font-weight: 700; opacity: 0.8;
+        }
+    </style>
+</head>
+<body class="loading-active">
+
+    <div class="cursor-dot" id="cursor-dot"></div>
+    <div class="cursor-outline" id="cursor-outline"></div>
+
+    <div class="progress-bar" id="progress-bar"></div>
+
+    <div id="loading">
+        <div class="loading-logo">EMOJINOKO.</div>
+        <div class="loading-bar-bg"><div class="loading-bar"></div></div>
+    </div>
+
+    <div class="particles" id="particles"></div>
+
+    <div id="top-back" title="トップへ飛ぶ！">
+        <img src="https://stickershop.line-scdn.net/sticonshop/v1/sticon/6763aeebb1c791561f00f86b/iPhone/030.png?v=5" alt="Top">
+    </div>
+
+    <header id="header">
+        <div class="logo">EMOJINOKO.</div>
+        <nav class="hdr-nav">
+            <a href="index.html" class="hdr-link">HOME</a>
+            <a href="https://store.line.me/emojishop/author/9871444/ja" class="hdr-btn" target="_blank">ストアを見る</a>
+        </nav>
+    </header>
+
+    <section class="hero" id="hero">
+        <div class="circle circle-1" data-speed="20"></div>
+        <div class="circle circle-2" data-speed="-20"></div>
+        
+        <div class="container hero-content" id="hero-content">
+            <p class="hero-catch">いつものトークに、<br>ちいさな体温を。</p>
+            
+            <div class="hero-title-wrap">
+                <span class="char">E</span><span class="char">M</span><span class="char">O</span><span class="char">J</span><span class="char">I</span><br>
+                <span class="char">N</span><span class="char">O</span><span class="char">K</span><span class="char">O</span>
+            </div>
+            
+            <p class="hero-desc">気づいたら、あなたのLINEにいた不思議な子。</p>
+            
+            <div style="margin-top: 1rem;">
+                <a href="#lineup" class="btn" id="hero-btn">ラインナップを見る</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="problem">
+        <div class="container">
+            <p class="problem-text gs-fade">
+                用件だけの冷たいテキストメッセージ。<br>
+                「怒ってるのかな？」と不安になったり、<br>
+                スタンプだと大げさすぎたり。<br><br>
+                そんなとき、文末に<span class="marker">「えもじの子」</span>を添えるだけで、<br>
+                会話の温度が、ふっと上がります。
+            </p>
+        </div>
+    </section>
+
+    <section class="usecase">
+        <div class="container chat-wrap">
+            <div class="phone-mockup">
+                <div class="phone-notch"></div>
+                <div class="status-bar">
+                    <span>12:00</span>
+                    <span>5G 100%</span>
+                </div>
+                
+                <div class="chat-screen">
+                    <div class="bubble-row them">
+                        <div class="bubble">お疲れ様！明日の待ち合わせ、10時で大丈夫？</div>
+                    </div>
+
+                    <div class="bubble-row me">
+                        <div class="label-wrap">
+                            <span class="label-badge">以前</span>
+                        </div>
+                        <div class="bubble" style="background: #E2E8F0; color: #64748B;">大丈夫です。よろしくお願いします。</div>
+                    </div>
+
+                    <div class="bubble-row me">
+                        <div class="label-wrap">
+                            <span class="label-badge highlight">New!</span>
+                        </div>
+                        <div class="bubble">
+                            大丈夫です！よろしくお願いします
+                            <img src="https://stickershop.line-scdn.net/sticonshop/v1/sticon/6763aeebb1c791561f00f86b/iPhone/038.png?v=5" class="inline-emoji" alt="お辞儀">
+                        </div>
+                    </div>
+
+                    <div class="bubble-row them" style="margin-top: 1rem;">
+                        <div class="bubble">
+                            了解！楽しみにしてるね！
+                            <img src="https://stickershop.line-scdn.net/sticonshop/v1/sticon/6763aeebb1c791561f00f86b/iPhone/002.png?v=5" class="inline-emoji" alt="笑顔">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chat-input">
+                    <div class="input-box">メッセージを入力</div>
+                    <div class="send-icon"></div>
+                </div>
+            </div>
+
+            <div class="chat-desc gs-fade">
+                <div class="sec-title" style="text-align: left; margin-bottom: 2rem;">
+                    <span class="en">SCENE</span>
+                    <span class="ja">言葉を超えた「間」を作る</span>
+                </div>
+                <p>文字だけのやり取りでは伝わりきらない「ニュアンス」や「気遣い」。えもじの子は、主張しすぎない絶妙なサイズ感で、あなたの言葉に寄り添います。</p>
+                <p>文末にちょこんと置くことで、テキストに温かい表情が生まれます。</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="lineup" id="lineup">
+        <div class="container">
+            <div class="sec-title gs-fade">
+                <span class="en" style="color: rgba(255,255,255,0.05);">LINEUP</span>
+                <span class="ja" style="color: #fff;">個性豊かな住人たち</span>
+            </div>
+            
+            <div class="product-grid">
+                <a href="https://store.line.me/emojishop/product/691a8989735a99603e711dca/ja" target="_blank" class="product-card gs-stagger">
+                    <div class="p-img">
+                        <img src="https://stickershop.line-scdn.net/sticonshop/v1/product/691a8989735a99603e711dca/iPhone/main.png?v=1" alt="（（（動）））ぬくぬく">
+                    </div>
+                    <div class="p-title">（（（動）））ぬくぬく</div>
+                    <div class="p-desc">気づいたら冬を過ごしにやってきた、温かいアニメーション絵文字。</div>
+                    <span class="p-link-btn">ストアで見る</span>
+                </a>
+
+                <a href="https://store.line.me/emojishop/product/68ff05f28b83ae15d74f66ef/ja" target="_blank" class="product-card gs-stagger">
+                    <div class="p-img">
+                        <img src="https://stickershop.line-scdn.net/sticonshop/v1/product/68ff05f28b83ae15d74f66ef/iPhone/main.png?v=1" alt="えもじの子（祝）">
+                    </div>
+                    <div class="p-title">えもじの子（祝）.+:｡</div>
+                    <div class="p-desc">みんなでお祝いの準備中！嬉しいことは全力でお祝いしよう。</div>
+                    <span class="p-link-btn">ストアで見る</span>
+                </a>
+
+                <a href="https://store.line.me/emojishop/product/6886e50da7f6a74d3809cf48/ja" target="_blank" class="product-card gs-stagger">
+                    <div class="p-img">
+                        <img src="https://stickershop.line-scdn.net/sticonshop/v1/product/6886e50da7f6a74d3809cf48/iPhone/main.png?v=1" alt="おかえり">
+                    </div>
+                    <div class="p-title">おかえり！あれ、増え…？</div>
+                    <div class="p-desc">再リリース版。いつの間にか見かけない子も混ざっているみたい？</div>
+                    <span class="p-link-btn">ストアで見る</span>
+                </a>
+
+                <a href="https://store.line.me/emojishop/product/6886e4a11f1f4a14851fa8bf/ja" target="_blank" class="product-card gs-stagger">
+                    <div class="p-img">
+                        <img src="https://stickershop.line-scdn.net/sticonshop/v1/product/6886e4a11f1f4a14851fa8bf/iPhone/main.png?v=1" alt="ただいま">
+                    </div>
+                    <div class="p-title">ただいま！</div>
+                    <div class="p-desc">またお会いできて嬉しいです♪ 無料配布版の待望の再リリース。</div>
+                    <span class="p-link-btn">ストアで見る</span>
+                </a>
+
+                <a href="https://store.line.me/emojishop/product/6886e0cda7f6a74d3809cedd/ja" target="_blank" class="product-card gs-stagger">
+                    <div class="p-img">
+                        <img src="https://stickershop.line-scdn.net/sticonshop/v1/product/6886e0cda7f6a74d3809cedd/iPhone/main.png?v=1" alt="日常">
+                    </div>
+                    <div class="p-title">たのしい日常</div>
+                    <div class="p-desc">なかまが増えて、さらにトークを楽しくしてくれる日常セット。</div>
+                    <span class="p-link-btn">ストアで見る</span>
+                </a>
+                
+                <a href="https://store.line.me/emojishop/product/67eb64896d0b246b2d83d1d9/ja" target="_blank" class="product-card gs-stagger">
+                    <div class="p-img">
+                        <img src="https://stickershop.line-scdn.net/sticonshop/v1/product/67eb64896d0b246b2d83d1d9/iPhone/main.png?v=1" alt="動く絵文字">
+                    </div>
+                    <div class="p-title">（（（動）））の絵文字</div>
+                    <div class="p-desc">なんとうごく絵文字になりました！おなじみの子も動きます。</div>
+                    <span class="p-link-btn">ストアで見る</span>
+                </a>
+
+                <a href="https://store.line.me/emojishop/product/6763aeebb1c791561f00f86b/ja" target="_blank" class="product-card gs-stagger">
+                    <div class="p-img">
+                        <img src="https://stickershop.line-scdn.net/sticonshop/v1/product/6763aeebb1c791561f00f86b/iPhone/main.png?v=1" alt="仮">
+                    </div>
+                    <div class="p-title">えもじの子（仮）</div>
+                    <div class="p-desc">すべてはここから始まった。あなたのLINEに住みつく不思議な子。</div>
+                    <span class="p-link-btn">ストアで見る</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta">
+        <div class="container cta-content gs-fade">
+            <h2>あなたのトークに、<br>小さな住人を。</h2>
+            <p>LINE STOREにて好評配信中</p>
+            <a href="https://store.line.me/emojishop/author/9871444/ja" class="btn" style="visibility: visible; background: var(--c-navy);">全シリーズを見に行く</a>
+        </div>
+    </section>
+
+    <footer>
+        <p>© 2026 Emojinoko Project. All rights reserved.</p>
+    </footer>
+
+    <script>
+        gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
+
+        // --- 0. Custom Cursor ---
+        const cursorDot = document.getElementById("cursor-dot");
+        const cursorOutline = document.getElementById("cursor-outline");
+        const lineupSection = document.querySelector(".lineup");
+
+        window.addEventListener("mousemove", (e) => {
+            const posX = e.clientX;
+            const posY = e.clientY;
+            cursorDot.style.left = `${posX}px`;
+            cursorDot.style.top = `${posY}px`;
+            cursorOutline.animate({
+                left: `${posX}px`,
+                top: `${posY}px`
+            }, { duration: 500, fill: "forwards" });
+        });
+
+        const hoverLinks = document.querySelectorAll('a, button, .product-card, #top-back');
+        hoverLinks.forEach(link => {
+            link.addEventListener('mouseenter', () => document.body.classList.add('hovering'));
+            link.addEventListener('mouseleave', () => document.body.classList.remove('hovering'));
+        });
+
+        if (lineupSection) {
+            lineupSection.addEventListener("mouseenter", () => document.body.classList.add("on-dark"));
+            lineupSection.addEventListener("mouseleave", () => document.body.classList.remove("on-dark"));
+        }
+
+        // --- 1. Particles ---
+        const particlesContainer = document.getElementById('particles');
+        const particleCount = 20;
+        for (let i = 0; i < particleCount; i++) {
+            const p = document.createElement('div');
+            p.classList.add('particle');
+            const size = Math.random() * 10 + 5;
+            p.style.width = `${size}px`;
+            p.style.height = `${size}px`;
+            p.style.left = `${Math.random() * 100}vw`;
+            p.style.top = `${Math.random() * 100}vh`;
+            p.style.animationDuration = `${Math.random() * 20 + 10}s`;
+            p.style.animationDelay = `${Math.random() * 5}s`;
+            particlesContainer.appendChild(p);
+        }
+
+        // --- 2. Scroll Progress ---
+        window.addEventListener("scroll", () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById("progress-bar").style.width = scrolled + "%";
+        });
+
+        // --- 3. Loading & Opening ---
+        const loadTl = gsap.timeline();
+        loadTl.to(".loading-logo", { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" })
+              .to(".loading-bar", { width: "100%", duration: 1, ease: "power2.inOut" })
+              .to("#loading", { 
+                  y: "-100%", duration: 0.8, ease: "power4.inOut", delay: 0.2,
+                  onComplete: startMainAnimation 
+              });
+
+        // --- 4. Main Hero ---
+        function startMainAnimation() {
+            const heroTl = gsap.timeline();
+            heroTl.to("header", { opacity: 1, duration: 0.8 })
+                  .fromTo(".hero-catch", 
+                      { y: 30, opacity: 0 }, 
+                      { y: 0, opacity: 1, duration: 1, ease: "power3.out" }, "-=0.4")
+                  .fromTo(".char", 
+                      { y: 50, opacity: 0, scale: 0.5 }, 
+                      { y: 0, opacity: 1, scale: 1, stagger: 0.05, duration: 0.8, ease: "back.out(1.7)" }, "-=0.5")
+                  .fromTo(".hero-desc",
+                      { y: 20, opacity: 0 },
+                      { y: 0, opacity: 0.8, duration: 1, ease: "power2.out" }, "-=0.4")
+                  .fromTo("#hero-btn",
+                      { scale: 0.8, autoAlpha: 0 }, 
+                      { scale: 1, autoAlpha: 1, duration: 0.6, ease: "back.out(1.7)" }, "-=0.4");
+        }
+
+        window.addEventListener("scroll", () => {
+            const header = document.getElementById("header");
+            const topBtn = document.getElementById("top-back");
+            if (window.scrollY > 50) header.classList.add("scrolled");
+            else header.classList.remove("scrolled");
+
+            if (window.scrollY > 500) topBtn.classList.add("show");
+            else topBtn.classList.remove("show");
+        });
+
+        document.getElementById("top-back").addEventListener("click", () => {
+            const btn = document.getElementById("top-back");
+            gsap.to(btn, { y: -800, duration: 0.6, ease: "power3.in" });
+            gsap.to(window, { duration: 1, scrollTo: 0, ease: "power3.inOut" });
+            gsap.set(btn, { y: 200, delay: 1 });
+        });
+
+        gsap.utils.toArray(".gs-fade").forEach(el => {
+            gsap.fromTo(el, 
+                { y: 40, opacity: 0 },
+                {
+                    scrollTrigger: { trigger: el, start: "top 85%" },
+                    y: 0, opacity: 1, duration: 0.8, ease: "power2.out"
+                }
+            );
+        });
+
+        const chatTl = gsap.timeline({
+            scrollTrigger: { trigger: ".usecase", start: "top 70%" }
+        });
+        chatTl
+            .fromTo(".phone-mockup", { y: 50, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, ease: "power2.out" })
+            .fromTo(".bubble", 
+                { y: 20, opacity: 0 }, 
+                { y: 0, opacity: 1, duration: 0.5, stagger: 0.4, ease: "power2.out" }, 
+                "-=0.2"
+            );
+
+        ScrollTrigger.batch(".gs-stagger", {
+            start: "top 85%",
+            once: true,
+            onEnter: batch => gsap.fromTo(batch, 
+                { y: 40, opacity: 0 }, 
+                { 
+                    y: 0, opacity: 1, duration: 0.8, 
+                    stagger: 0.15, 
+                    delay: 0.2, 
+                    ease: "power2.out" 
+                }
+            )
+        });
+
+        const heroSection = document.getElementById('hero');
+        heroSection.addEventListener('mousemove', (e) => {
+            const x = (e.clientX / window.innerWidth - 0.5) * 2;
+            const y = (e.clientY / window.innerHeight - 0.5) * 2;
+            gsap.to(".circle-1", { x: x * 30, y: y * 30, duration: 1, ease: "power2.out" });
+            gsap.to(".circle-2", { x: x * -30, y: y * -30, duration: 1, ease: "power2.out" });
+            gsap.to(".hero-title-wrap", { x: x * -10, y: y * -10, duration: 1, ease: "power2.out" });
+        });
+    </script>
+</body>
+</html>
